@@ -33,6 +33,18 @@ pub enum Command {
     GetCerts,
     /// Prints the measurement log from the RoT
     GetLog,
+    /// Reads a value from the active APOB slot (if available)
+    ApobRead {
+        #[clap(long)]
+        offset: u64,
+        #[clap(long, short = 'N')]
+        size: u64,
+    },
+    /// Writes a file to APOB flash
+    ApobWrite {
+        #[clap(long, short)]
+        file: PathBuf,
+    },
 }
 
 #[derive(Debug, Parser)]
@@ -193,6 +205,66 @@ fn main() -> Result<()> {
             }
             Ok(())
         }
+        Command::ApobRead { offset, size } => {
+            let (response, data) =
+                worker.send_recv(HostToSp::ApobRead { offset, size }, |_| 0)?;
+            let SpToHost::ApobRead(r) = response else {
+                bail!("invalid response: expected ApobRead, got {response:?}");
+            };
+            if !matches!(r, host_sp_messages::ApobReadResult::Ok) {
+                bail!("got error from APOB read: {r:?}");
+            };
+            let d = Dumper::new();
+            d.dump(&data, u32::try_from(offset).unwrap());
+            Ok(())
+        }
+        Command::ApobWrite { file } => {
+            let data = std::fs::read(&file)
+                .with_context(|| format!("failed to read {file:?}"))?;
+            let mut hasher = sha2::Sha256::new();
+            use sha2::Digest;
+            hasher.update(&data);
+            let hash = hasher.finalize();
+            let hash = hash.as_slice();
+            let (r, _) = worker.send_recv(
+                HostToSp::ApobBegin {
+                    length: data.len().try_into().unwrap(),
+                    algorithm: 0u8,
+                },
+                |buf| {
+                    buf[..hash.len()].copy_from_slice(hash);
+                    hash.len()
+                },
+            )?;
+            let SpToHost::ApobBegin(r) = r else {
+                bail!("invalid response: expected ApobBegin, got {r:?}");
+            };
+            if !matches!(r, host_sp_messages::ApobBeginResult::Ok) {
+                bail!("got error from APOB begin: {r:?}");
+            };
+            let mut offset = 0;
+            for chunk in data.chunks(2048) {
+                debug!(log, "writing chunk at offset {offset}");
+                worker.send_recv(
+                    HostToSp::ApobData {
+                        offset: offset.try_into().unwrap(),
+                    },
+                    |buf| {
+                        buf[..chunk.len()].copy_from_slice(chunk);
+                        chunk.len()
+                    },
+                )?;
+                offset += chunk.len();
+            }
+            let r = worker.send(HostToSp::ApobCommit)?;
+            let SpToHost::ApobCommit(r) = r else {
+                bail!("invalid response: expected ApobCommit, got {r:?}");
+            };
+            if !matches!(r, host_sp_messages::ApobCommitResult::Ok) {
+                bail!("got error from APOB commit: {r:?}");
+            };
+            Ok(())
+        }
     }
 }
 
@@ -238,7 +310,7 @@ impl Worker {
         let mut retry_count = 0;
         let start_time = std::time::Instant::now();
 
-        while data_size.map_or(true, |s| offset < s) {
+        while data_size.is_none_or(|s| offset < s) {
             debug!(self.log, "getting image chunk at offset {offset}");
 
             let mut r = Err(anyhow!("")); // initialize to a dummy value
@@ -347,6 +419,13 @@ impl Worker {
         Ok(data)
     }
 
+    /// Sends a message with no data buffers (in either direction)
+    fn send(&mut self, message: HostToSp) -> Result<SpToHost> {
+        self.send_recv(message, |_| 0)
+            .map(|(response, _data)| response)
+    }
+
+    /// Sends a message with data buffers
     fn send_recv<F>(
         &mut self,
         message: HostToSp,
@@ -459,5 +538,147 @@ impl Worker {
 
         debug!(self.log, "done.");
         Ok(data.to_owned())
+    }
+}
+
+pub struct Dumper {
+    /// Word size, in bytes
+    pub size: usize,
+
+    /// Width of memory, in bytes
+    pub width: usize,
+
+    /// Address size, in nibbles
+    pub addrsize: usize,
+
+    /// Left indentation, in characters
+    pub indent: usize,
+
+    /// Left indent should be a hanging indent
+    pub hanging: bool,
+
+    /// Print the OpenBoot PROM-style header line
+    pub header: bool,
+
+    /// Print the ASCII translation of characters in the right margin
+    pub ascii: bool,
+}
+
+// Borrowed from `oxidecomputer/humility`
+impl Dumper {
+    pub fn new() -> Self {
+        Self {
+            size: 1,
+            width: 16,
+            addrsize: 8,
+            indent: 0,
+            hanging: false,
+            header: true,
+            ascii: true,
+        }
+    }
+
+    pub fn dump(&self, bytes: &[u8], addr: u32) {
+        let size = self.size;
+        let width = self.width;
+        let mut addr = addr;
+        let mut indent = if self.hanging { 0 } else { self.indent };
+
+        let print = |line: &[u8], addr, offs, indent| {
+            print!(
+                "{:indent$}0x{:0width$x} | ",
+                "",
+                addr,
+                indent = indent,
+                width = self.addrsize
+            );
+
+            for i in (0..width).step_by(size) {
+                if i < offs || i - offs >= line.len() {
+                    print!(" {:width$}", "", width = size * 2);
+                    continue;
+                }
+
+                let slice = &line[i - offs..i - offs + size];
+
+                print!(
+                    "{:0width$x} ",
+                    match size {
+                        1 => u32::from(line[i - offs]),
+                        2 => u32::from(u16::from_le_bytes(
+                            slice.try_into().unwrap()
+                        )),
+                        4 => u32::from_le_bytes(slice.try_into().unwrap()),
+                        _ => {
+                            panic!("invalid size");
+                        }
+                    },
+                    width = size * 2
+                );
+            }
+
+            if self.ascii {
+                print!("| ");
+
+                for i in 0..width {
+                    if i < offs || i - offs >= line.len() {
+                        print!(" ");
+                    } else {
+                        let c = line[i - offs] as char;
+
+                        if c.is_ascii() && !c.is_ascii_control() {
+                            print!("{}", c);
+                        } else {
+                            print!(".");
+                        }
+                    }
+                }
+            }
+
+            println!();
+        };
+
+        let offs = (addr & (width - 1) as u32) as usize;
+        addr -= offs as u32;
+
+        //
+        // Print out header line, OpenBoot PROM style
+        //
+        if self.header {
+            print!("  {:width$}  ", "", width = indent + self.addrsize);
+
+            for i in (0..width).step_by(size) {
+                if i == offs {
+                    print!(" {:>width$}", "\\/", width = size * 2);
+                } else {
+                    print!(" {:>width$x}", i, width = size * 2);
+                }
+            }
+
+            println!();
+            indent = self.indent;
+        }
+
+        //
+        // Print our first line.
+        //
+        let lim = std::cmp::min(width - offs, bytes.len());
+        print(&bytes[0..lim], addr, offs, indent);
+        indent = self.indent;
+
+        if lim < bytes.len() {
+            let lines = bytes[lim..].chunks(width);
+
+            for line in lines {
+                addr += width as u32;
+                print(line, addr, 0, indent);
+            }
+        }
+    }
+}
+
+impl Default for Dumper {
+    fn default() -> Self {
+        Self::new()
     }
 }

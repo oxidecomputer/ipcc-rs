@@ -5,13 +5,13 @@ version = 4
 [[package]]
 name = "abi"
 version = "0.1.0"
-source = "git+https://github.com/oxidecomputer/hubris#f3d51548b98fa4728d68fb3059137092c4de7ccb"
+source = "git+https://github.com/oxidecomputer/hubris?branch=mkeeter%2Fipcc-apob#ccc0c04cf8b76b5b88c6e14938872a0497fa17f7"
 dependencies = [
  "bitflags 2.8.0",
  "byteorder",
  "phash",
  "serde",
- "zerocopy 0.6.6",
+ "zerocopy 0.8.27",
 ]
 
 [[package]]
@@ -73,7 +73,7 @@ checksum = "6b964d184e89d9b6b67dd2715bc8e74cf3107fb2b529990c90cf517326150bf4"
 [[package]]
 name = "armv6m-atomic-hack"
 version = "0.1.0"
-source = "git+https://github.com/oxidecomputer/hubris#f3d51548b98fa4728d68fb3059137092c4de7ccb"
+source = "git+https://github.com/oxidecomputer/hubris?branch=mkeeter%2Fipcc-apob#ccc0c04cf8b76b5b88c6e14938872a0497fa17f7"
 dependencies = [
  "build-util",
 ]
@@ -166,7 +166,7 @@ dependencies = [
 [[package]]
 name = "build-util"
 version = "0.1.0"
-source = "git+https://github.com/oxidecomputer/hubris#f3d51548b98fa4728d68fb3059137092c4de7ccb"
+source = "git+https://github.com/oxidecomputer/hubris?branch=mkeeter%2Fipcc-apob#ccc0c04cf8b76b5b88c6e14938872a0497fa17f7"
 dependencies = [
  "anyhow",
  "indexmap 1.9.3",
@@ -278,7 +278,7 @@ checksum = "f9236877021b66ad90f833d8a73a7acb702b985b64c5986682d9f1f1a184f0fb"
 [[package]]
 name = "counters"
 version = "0.1.0"
-source = "git+https://github.com/oxidecomputer/hubris#f3d51548b98fa4728d68fb3059137092c4de7ccb"
+source = "git+https://github.com/oxidecomputer/hubris?branch=mkeeter%2Fipcc-apob#ccc0c04cf8b76b5b88c6e14938872a0497fa17f7"
 dependencies = [
  "armv6m-atomic-hack",
  "counters-derive",
@@ -287,7 +287,7 @@ dependencies = [
 [[package]]
 name = "counters-derive"
 version = "0.1.0"
-source = "git+https://github.com/oxidecomputer/hubris#f3d51548b98fa4728d68fb3059137092c4de7ccb"
+source = "git+https://github.com/oxidecomputer/hubris?branch=mkeeter%2Fipcc-apob#ccc0c04cf8b76b5b88c6e14938872a0497fa17f7"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -405,7 +405,7 @@ dependencies = [
 [[package]]
 name = "derive-idol-err"
 version = "0.1.0"
-source = "git+https://github.com/oxidecomputer/hubris#f3d51548b98fa4728d68fb3059137092c4de7ccb"
+source = "git+https://github.com/oxidecomputer/hubris?branch=mkeeter%2Fipcc-apob#ccc0c04cf8b76b5b88c6e14938872a0497fa17f7"
 dependencies = [
  "abi",
  "proc-macro2",
@@ -460,7 +460,7 @@ dependencies = [
 [[package]]
 name = "drv-i2c-types"
 version = "0.1.0"
-source = "git+https://github.com/oxidecomputer/hubris#f3d51548b98fa4728d68fb3059137092c4de7ccb"
+source = "git+https://github.com/oxidecomputer/hubris?branch=mkeeter%2Fipcc-apob#ccc0c04cf8b76b5b88c6e14938872a0497fa17f7"
 dependencies = [
  "counters",
  "derive-idol-err",
@@ -509,11 +509,12 @@ dependencies = [
  "humantime",
  "ipcc-data",
  "serialport",
+ "sha2",
  "slog",
  "slog-async",
  "slog-term",
  "x509-cert",
- "zerocopy 0.8.20",
+ "zerocopy 0.8.27",
 ]
 
 [[package]]
@@ -653,7 +654,7 @@ checksum = "7f24254aa9a54b5c858eaee2f5bccdb46aaf0e486a595ed5fd8f86ba55232a70"
 [[package]]
 name = "host-sp-messages"
 version = "0.1.0"
-source = "git+https://github.com/oxidecomputer/hubris#f3d51548b98fa4728d68fb3059137092c4de7ccb"
+source = "git+https://github.com/oxidecomputer/hubris?branch=mkeeter%2Fipcc-apob#ccc0c04cf8b76b5b88c6e14938872a0497fa17f7"
 dependencies = [
  "bitflags 2.8.0",
  "counters",
@@ -669,7 +670,8 @@ dependencies = [
  "serde_repr",
  "static_assertions",
  "unwrap-lite",
- "zerocopy 0.6.6",
+ "zerocopy 0.8.27",
+ "zerocopy-derive 0.8.27",
 ]
 
 [[package]]
@@ -718,9 +720,9 @@ dependencies = [
 
 [[package]]
 name = "indexmap"
-version = "2.7.1"
+version = "2.11.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8c9c992b02b5b4c94ea26e32fe5bccb7aa7d9f390ab5c1221ff895bc7ea8b652"
+checksum = "4b0f83760fb341a774ed326568e19f5a863af4a952def8c39f9ab92fd95b88e5"
 dependencies = [
  "equivalent",
  "hashbrown 0.15.2",
@@ -743,8 +745,8 @@ dependencies = [
  "anyhow",
  "binrw",
  "derive_more",
- "indexmap 2.7.1",
- "zerocopy 0.8.20",
+ "indexmap 2.11.4",
+ "zerocopy 0.8.27",
 ]
 
 [[package]]
@@ -928,11 +930,11 @@ checksum = "c1b04fb49957986fdce4d6ee7a65027d55d4b6d2265e5848bbb507b58ccfdb6f"
 [[package]]
 name = "oxide-barcode"
 version = "0.1.0"
-source = "git+https://github.com/oxidecomputer/hubris#f3d51548b98fa4728d68fb3059137092c4de7ccb"
+source = "git+https://github.com/oxidecomputer/hubris?branch=mkeeter%2Fipcc-apob#ccc0c04cf8b76b5b88c6e14938872a0497fa17f7"
 dependencies = [
  "hubpack",
  "serde",
- "zerocopy 0.6.6",
+ "zerocopy 0.8.27",
 ]
 
 [[package]]
@@ -947,7 +949,7 @@ dependencies = [
 [[package]]
 name = "phash"
 version = "0.1.0"
-source = "git+https://github.com/oxidecomputer/hubris#f3d51548b98fa4728d68fb3059137092c4de7ccb"
+source = "git+https://github.com/oxidecomputer/hubris?branch=mkeeter%2Fipcc-apob#ccc0c04cf8b76b5b88c6e14938872a0497fa17f7"
 
 [[package]]
 name = "pkg-config"
@@ -1035,10 +1037,11 @@ checksum = "f79dfe2d285b0488816f30e700a7438c5a73d816b5b7d3ac72fbc48b0d185e03"
 
 [[package]]
 name = "serde"
-version = "1.0.218"
+version = "1.0.226"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e8dfc9d19bdbf6d17e22319da49161d5d0108e4188e8b680aef6299eed22df60"
+checksum = "0dca6411025b24b60bfa7ec1fe1f8e710ac09782dca409ee8237ba74b51295fd"
 dependencies = [
+ "serde_core",
  "serde_derive",
 ]
 
@@ -1061,10 +1064,19 @@ dependencies = [
 ]
 
 [[package]]
-name = "serde_derive"
-version = "1.0.218"
+name = "serde_core"
+version = "1.0.226"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f09503e191f4e797cb8aac08e9a4a4695c5edf6a2e70e376d961ddd5c969f82b"
+checksum = "ba2ba63999edb9dac981fb34b3e5c0d111a69b0924e253ed29d83f7c99e966a4"
+dependencies = [
+ "serde_derive",
+]
+
+[[package]]
+name = "serde_derive"
+version = "1.0.226"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8db53ae22f34573731bafa1db20f04027b2d25e02d8205921b569171699cdb33"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -1096,11 +1108,11 @@ dependencies = [
 
 [[package]]
 name = "serde_spanned"
-version = "0.6.8"
+version = "1.0.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "87607cb1398ed59d48732e575a4c28a7a8ebf2454b964fe3f224f2afc07909e1"
+checksum = "5417783452c2be558477e104686f7de5dae53dba813c28435e0e70f82d9b04ee"
 dependencies = [
- "serde",
+ "serde_core",
 ]
 
 [[package]]
@@ -1143,6 +1155,17 @@ dependencies = [
  "scopeguard",
  "unescaper",
  "winapi",
+]
+
+[[package]]
+name = "sha2"
+version = "0.10.9"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a7507d819769d01a365ab707794a4084392c824f54a7a6a7862f8c3d0892b283"
+dependencies = [
+ "cfg-if",
+ "cpufeatures",
+ "digest",
 ]
 
 [[package]]
@@ -1378,20 +1401,23 @@ dependencies = [
 
 [[package]]
 name = "toml"
-version = "0.7.8"
+version = "0.9.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dd79e69d3b627db300ff956027cc6c3798cef26d22526befdfcd12feeb6d2257"
+checksum = "00e5e5d9bf2475ac9d4f0d9edab68cc573dc2fd644b0dba36b0c30a92dd9eaa0"
 dependencies = [
- "serde",
+ "indexmap 2.11.4",
+ "serde_core",
  "serde_spanned",
  "toml_datetime",
- "toml_edit",
+ "toml_parser",
+ "toml_writer",
+ "winnow",
 ]
 
 [[package]]
 name = "toml-task"
 version = "0.1.0"
-source = "git+https://github.com/oxidecomputer/hubris#f3d51548b98fa4728d68fb3059137092c4de7ccb"
+source = "git+https://github.com/oxidecomputer/hubris?branch=mkeeter%2Fipcc-apob#ccc0c04cf8b76b5b88c6e14938872a0497fa17f7"
 dependencies = [
  "anyhow",
  "indexmap 1.9.3",
@@ -1401,25 +1427,27 @@ dependencies = [
 
 [[package]]
 name = "toml_datetime"
-version = "0.6.8"
+version = "0.7.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0dd7358ecb8fc2f8d014bf86f6f638ce72ba252a2c3a2572f2a795f1d23efb41"
+checksum = "32f1085dec27c2b6632b04c80b3bb1b4300d6495d1e129693bdda7d91e72eec1"
 dependencies = [
- "serde",
+ "serde_core",
 ]
 
 [[package]]
-name = "toml_edit"
-version = "0.19.15"
+name = "toml_parser"
+version = "1.0.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1b5bb770da30e5cbfde35a2d7b9b8a2c4b8ef89548a7a6aeab5c9a576e3e7421"
+checksum = "4cf893c33be71572e0e9aa6dd15e6677937abd686b066eac3f8cd3531688a627"
 dependencies = [
- "indexmap 2.7.1",
- "serde",
- "serde_spanned",
- "toml_datetime",
  "winnow",
 ]
+
+[[package]]
+name = "toml_writer"
+version = "1.0.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d163a63c116ce562a22cda521fcc4d79152e7aba014456fb5eb442f6d6a10109"
 
 [[package]]
 name = "typenum"
@@ -1445,7 +1473,7 @@ checksum = "00e2473a93778eb0bad35909dff6a10d28e63f792f16ed15e404fca9d5eeedbe"
 [[package]]
 name = "unwrap-lite"
 version = "0.1.0"
-source = "git+https://github.com/oxidecomputer/hubris#f3d51548b98fa4728d68fb3059137092c4de7ccb"
+source = "git+https://github.com/oxidecomputer/hubris?branch=mkeeter%2Fipcc-apob#ccc0c04cf8b76b5b88c6e14938872a0497fa17f7"
 
 [[package]]
 name = "utf8parse"
@@ -1574,12 +1602,9 @@ checksum = "589f6da84c646204747d1270a2a5661ea66ed1cced2631d546fdfb155959f9ec"
 
 [[package]]
 name = "winnow"
-version = "0.5.40"
+version = "0.7.13"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f593a95398737aeed53e489c785df13f3618e41dbcd6718c6addbf1395aa6876"
-dependencies = [
- "memchr",
-]
+checksum = "21a0236b59786fed61e2a80582dd500fe61f18b5dca67a4a067d0bc9039339cf"
 
 [[package]]
 name = "x509-cert"
@@ -1605,11 +1630,11 @@ dependencies = [
 
 [[package]]
 name = "zerocopy"
-version = "0.8.20"
+version = "0.8.27"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dde3bb8c68a8f3f1ed4ac9221aad6b10cece3e60a8e2ea54a6a2dec806d0084c"
+checksum = "0894878a5fa3edfd6da3f88c4805f4c8558e2b996227a3d864f47fe11e38282c"
 dependencies = [
- "zerocopy-derive 0.8.20",
+ "zerocopy-derive 0.8.27",
 ]
 
 [[package]]
@@ -1625,9 +1650,9 @@ dependencies = [
 
 [[package]]
 name = "zerocopy-derive"
-version = "0.8.20"
+version = "0.8.27"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "eea57037071898bf96a6da35fd626f4f27e9cee3ead2a6c703cf09d472b2e700"
+checksum = "88d2b8d9c68ad2b9e4340d7832716a4d21a22a1154777ad56ea55c51a9cf3831"
 dependencies = [
  "proc-macro2",
  "quote",
