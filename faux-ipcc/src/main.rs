@@ -11,7 +11,7 @@ use serialport_upstream as serialport;
 use anyhow::{anyhow, bail, Context, Result};
 use clap::{Parser, Subcommand};
 use serialport::{DataBits, FlowControl, Parity, StopBits};
-use slog::{debug, info, o, trace, Drain, Level, Logger};
+use slog::{debug, info, o, trace, warn, Drain, Level, Logger};
 use slog_async::AsyncGuard;
 use std::{
     path::{Path, PathBuf},
@@ -249,19 +249,36 @@ fn main() -> Result<()> {
                 bail!("got error from APOB begin: {r:?}");
             };
             let mut offset = 0;
-            for chunk in data.chunks(2048) {
+            for chunk in data.chunks(4096) {
                 debug!(log, "writing chunk at offset {offset}");
-                worker.send_recv(
-                    HostToSp::ApobData {
-                        offset: offset.try_into().unwrap(),
-                    },
-                    |buf| {
-                        buf[..chunk.len()].copy_from_slice(chunk);
-                        chunk.len()
-                    },
-                )?;
+                let mut last_err = None;
+                const RETRY_COUNT: usize = 8;
+                for i in 0..RETRY_COUNT {
+                    match worker.send_recv(
+                        HostToSp::ApobData {
+                            offset: offset.try_into().unwrap(),
+                        },
+                        |buf| {
+                            buf[..chunk.len()].copy_from_slice(chunk);
+                            chunk.len()
+                        },
+                    ) {
+                        Ok(..) => {
+                            last_err = None;
+                            break;
+                        }
+                        Err(e) => {
+                            warn!(log, "retry {}/{RETRY_COUNT}: {e:#}", i + 1);
+                            last_err = Some(e);
+                        }
+                    }
+                }
+                if let Some(e) = last_err {
+                    return Err(e);
+                };
                 offset += chunk.len();
             }
+            debug!(log, "committing APOB");
             let r = worker.send(HostToSp::ApobCommit)?;
             let SpToHost::ApobCommit(r) = r else {
                 bail!("invalid response: expected ApobCommit, got {r:?}");
@@ -269,6 +286,7 @@ fn main() -> Result<()> {
             if !matches!(r, host_sp_messages::ApobCommitResult::Ok) {
                 bail!("got error from APOB commit: {r:?}");
             };
+            info!(log, "success (wrote {} bytes)", data.len());
             Ok(())
         }
     }
@@ -287,7 +305,7 @@ impl Worker {
         };
         info!(log, "connecting to serial port at `{port_name}`");
         let port = serialport::new(port_name, 3_000_000)
-            .timeout(Duration::from_millis(200))
+            .timeout(Duration::from_millis(1000))
             .data_bits(DataBits::Eight)
             .flow_control(FlowControl::None)
             .parity(Parity::None)
@@ -454,7 +472,7 @@ impl Worker {
         trace!(self.log, "hubpack {} {:02x?}", n, &buf[..n]);
 
         // Perform COBS encoding into a second buffer
-        let mut corncob_buf = [0; MAX_MESSAGE_SIZE];
+        let mut corncob_buf = [0; corncobs::max_encoded_len(MAX_MESSAGE_SIZE)];
         let n = corncobs::encode_buf(&buf[..n], &mut corncob_buf);
         trace!(self.log, "corncob {} {:02x?}", n, &corncob_buf[..n]);
 
@@ -507,7 +525,7 @@ impl Worker {
             bail!(
                 "bad sequence in received header: expected {:#x}, got {:#x}",
                 header.sequence | (1 << 63),
-                rx_header.version
+                rx_header.sequence
             );
         }
         Ok((request, data.to_owned()))
