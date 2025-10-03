@@ -5,7 +5,7 @@ edition = "2021"
 
 [dependencies]
 attest-data.git = "https://github.com/oxidecomputer/dice-util"
-host-sp-messages = { git = "https://github.com/oxidecomputer/hubris", branch = "mkeeter/ipcc-apob" }
+host-sp-messages.git = "https://github.com/oxidecomputer/hubris"
 
 ipcc-data.path = "../ipcc-data"
 
