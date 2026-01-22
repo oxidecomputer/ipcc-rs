@@ -2,7 +2,7 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-// Copyright 2023 Oxide Computer Company
+// Copyright 2026 Oxide Computer Company
 
 //! An interface to libipcc (inter-processor communications channel) which
 //! currently supports looking up values stored in the SP by key. These
@@ -53,3 +53,17 @@ pub struct IpccErrorInner {
     pub syserr: String,
 }
 
+// These aren't strictly part of libipcc but are defined as part of the
+// Host<->SP protocol as laid out in RFD 316 and are used for message
+// calculations for messages which use opaque data.
+
+/// The size of a message with no associated data:
+///   magic (4) + version (4) + sequence (8) + command (1) + checksum (2)
+pub const IPCC_MIN_MESSAGE_SIZE: usize = 19;
+/// The maximum size of message:
+///   header (17) + data (4KiB + 8) + checksum (2)
+pub const IPCC_MAX_MESSAGE_SIZE: usize = 4123;
+/// A message may contain up to 4KiB of payload along with an extra 64-bits of
+/// accompanying data.
+pub const IPCC_MAX_DATA_SIZE: usize =
+    IPCC_MAX_MESSAGE_SIZE - IPCC_MIN_MESSAGE_SIZE;
