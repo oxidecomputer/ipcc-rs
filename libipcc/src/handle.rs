@@ -14,6 +14,12 @@ use crate::{ffi::*, IpccErrorInner};
 
 pub struct IpccHandle(*mut libipcc_handle_t);
 
+// SAFETY: `libipcc(3IPCC)` handles are fine to pass between threads so we can
+// safely mark it `Send`. A single handle may NOT be used simultaneously by
+// multiple threads so is NOT safe to mark `Sync`. Separate threads are free
+// to use separate handles at the same time.
+unsafe impl Send for IpccHandle {}
+
 impl Drop for IpccHandle {
     fn drop(&mut self) {
         unsafe {
