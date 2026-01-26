@@ -2,7 +2,7 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-// Copyright 2023 Oxide Computer Company
+// Copyright 2026 Oxide Computer Company
 
 #![allow(non_upper_case_globals)]
 #![allow(non_camel_case_types)]
@@ -66,13 +66,6 @@ pub struct libipcc_rot_resp_t {
     _data: [u8; 0],
     _marker: core::marker::PhantomData<(*mut u8, core::marker::PhantomPinned)>,
 }
-
-/// These aren't strictly part of libipcc but are used as part of message calculations
-/// for RoT
-pub const IPCC_MIN_MESSAGE_SIZE: usize = 19;
-pub const IPCC_MAX_MESSAGE_SIZE: usize = 4123;
-pub const IPCC_MAX_DATA_SIZE: usize =
-    IPCC_MAX_MESSAGE_SIZE - IPCC_MIN_MESSAGE_SIZE;
 
 #[link(name = "ipcc")]
 extern "C" {
