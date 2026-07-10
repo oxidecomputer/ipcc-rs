@@ -13,7 +13,6 @@ anyhow = "1.0.96"
 clap = { version = "4.5.31", features = ["derive", "env"] }
 corncobs = "0.1.3"
 hex = "0.4.3"
-serialport = "4.7.0"
 slog = { version = "2.7.0", features = ["max_level_trace", "release_max_level_debug"] }
 ftdi = "0.1.3"
 slog-async = "2.8.0"
@@ -22,3 +21,13 @@ zerocopy = "0.8.20"
 humantime = "2.1.0"
 x509-cert = "0.2.5"
 hubpack = "0.1.2"
+
+# serialport doesn't support illumos
+[target.'cfg(not(target_os = "illumos"))'.dependencies.serialport_upstream]
+package = "serialport"
+version = "4.7.0"
+
+[target.'cfg(target_os = "illumos")'.dependencies.serialport_illumos]
+package = "serialport"
+git = "https://github.com/jgallagher/serialport-rs.git"
+branch = "illumos-support"

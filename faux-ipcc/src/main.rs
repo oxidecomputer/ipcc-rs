@@ -2,6 +2,12 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
+#[cfg(target_os = "illumos")]
+use serialport_illumos as serialport;
+
+#[cfg(not(target_os = "illumos"))]
+use serialport_upstream as serialport;
+
 use anyhow::{anyhow, bail, Context, Result};
 use clap::{Parser, Subcommand};
 use serialport::{DataBits, FlowControl, Parity, StopBits};
