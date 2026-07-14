@@ -24,7 +24,7 @@ use attest_data::{
     Log,
 };
 use host_sp_messages::{Header, HostToSp, SpToHost, MAGIC, MAX_MESSAGE_SIZE};
-use ipcc_data::BootSpHeader;
+use ipcc_data::{make_a_panic_payload, BootSpHeader};
 
 #[derive(Subcommand, Debug)]
 pub enum Command {
@@ -39,6 +39,13 @@ pub enum Command {
     GetCerts,
     /// Prints the measurement log from the RoT
     GetLog,
+    /// Bad Apob Read
+    BadApob,
+    /// Report Host Panicked
+    HostPanic {
+        message: String,
+    },
+    HostBootfail,
 }
 
 #[derive(Debug, Parser)]
@@ -133,6 +140,7 @@ fn main() -> Result<()> {
     let (log, _guard) =
         build_logger(args.log_level.into(), args.logfile.as_deref())?;
 
+    #[cfg(feature = "ftdi")]
     if args.ftdi_tweak {
         let mut device = ftdi::find_by_vid_pid(0x0403, 0x6001)
             .interface(ftdi::Interface::A)
@@ -141,9 +149,51 @@ fn main() -> Result<()> {
         device.set_latency_timer(1)?;
         info!(log, "set latency timer {prev} -> 1");
     }
+    #[cfg(not(feature = "ftdi"))]
+    assert!(!args.ftdi_tweak);
 
     let mut worker = Worker::new(&args.port, log.clone())?;
     match args.command {
+        Command::BadApob => {
+            let got = worker.send_recv(
+                HostToSp::ApobRead {
+                    offset: 0,
+                    size: 0xFFFF_0000,
+                },
+                |_| 0,
+            )?;
+            println!("{got:?}");
+            Ok(())
+        }
+        Command::HostPanic { message: _ } => {
+            let got = worker.send_recv(HostToSp::HostPanic, |b| {
+                let msgb = make_a_panic_payload();
+                let min_len = b.len().min(msgb.len());
+                // TODO: This might not cut utf-8 bytes correctly!
+                b[..min_len].copy_from_slice(&msgb);
+                min_len
+            })?;
+            println!("{got:?}");
+            Ok(())
+        }
+        Command::HostBootfail => {
+            let got = worker.send_recv(
+                HostToSp::HostBootFailure { reason: 4 },
+                |b| {
+                    let msg = "Oh no, something terrible has happened! \0\0\0";
+                    b.iter_mut()
+                        .zip(msg.as_bytes().iter().cycle())
+                        .take(300)
+                        .for_each(|(b, t)| {
+                            *b = *t;
+                        });
+                    300
+                },
+            )?;
+            println!("{got:?}");
+            Ok(())
+        }
+
         Command::Status => worker.get_status(),
         Command::ReadImage { hash } => {
             let image = worker.read_image(hash)?;

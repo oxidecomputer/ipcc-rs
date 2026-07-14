@@ -21,7 +21,7 @@
 
 use anyhow::{bail, Context, Result};
 use binrw::helpers::until_eof;
-use binrw::{io::Cursor, BinRead};
+use binrw::{io::Cursor, BinRead, BinWrite};
 use derive_more::{Display, LowerHex};
 use indexmap::IndexMap;
 use std::convert::{TryFrom, TryInto};
@@ -304,7 +304,7 @@ struct IpccPanicStackV1 {
 }
 
 #[allow(dead_code)]
-#[derive(Debug, BinRead)]
+#[derive(Debug, BinRead, BinWrite)]
 struct IpccPanicRegs {
     savfp: u64,
     savpc: u64,
@@ -338,15 +338,16 @@ struct IpccPanicRegs {
     ss: u64,
 }
 
-#[derive(Debug, BinRead)]
+#[derive(Debug, BinRead, BinWrite)]
 #[allow(dead_code)]
 struct IpccHresTime {
     tv_sec: u64,
     tv_nsec: u64,
 }
 
-#[derive(Debug, PartialEq, BinRead)]
+#[derive(Debug, PartialEq, BinRead, BinWrite)]
 #[br(repr = u8)]
+#[bw(repr = u8)]
 enum IpccPanicItemType {
     Nop,
     Message,
@@ -354,7 +355,7 @@ enum IpccPanicItemType {
     Ancillary,
 }
 
-#[derive(Debug, BinRead)]
+#[derive(Debug, BinRead, BinWrite)]
 #[allow(dead_code)]
 struct IpccPanicItem {
     ftype: IpccPanicItemType,
@@ -372,7 +373,7 @@ struct IpccPanicStack {
     symbol: Vec<u8>,
 }
 
-#[derive(Debug, BinRead)]
+#[derive(Debug, BinRead, BinWrite)]
 #[allow(dead_code)]
 struct IpccPanicDataV2 {
     #[br(assert(version == 2))]
@@ -396,6 +397,65 @@ struct IpccPanicDataV2 {
     items_len: u16,
     #[br(count = nitems)]
     items: Vec<IpccPanicItem>,
+}
+
+pub fn make_a_panic_payload() -> Vec<u8> {
+    let todo = IpccPanicDataV2 {
+        version: 2,
+        cause: 0xa900,
+        error: 0x5678_90AB,
+        hrtime: 0x1122_3344_5566_7788,
+        hrestime: IpccHresTime {
+            tv_sec: 0x9900_AABB_CCDD_EEFF,
+            tv_nsec: 0x0A_BCDE,
+        },
+        cpuid: 0xFEDC_BA09,
+        thread: 0x1234_2345_3456_4567,
+        addr: 0x5678_6789_7890_890A,
+        pc: 0x90AB_0ABC_ABCD_BCDE,
+        fp: 0x1112_2223_3334_4445,
+        rp: 0x5556_6667_7778_8889,
+        registers: IpccPanicRegs {
+            savfp: 0,
+            savpc: 1,
+            rdi: 2,
+            rsi: 3,
+            rdx: 4,
+            rcx: 5,
+            r8: 6,
+            r9: 7,
+            rax: 8,
+            rbx: 9,
+            rbp: 10,
+            r10: 11,
+            r11: 12,
+            r12: 13,
+            r13: 14,
+            r14: 15,
+            r15: 16,
+            fsbase: 17,
+            gsbase: 18,
+            ds: 19,
+            es: 20,
+            fs: 21,
+            gs: 22,
+            trapno: 23,
+            err: 24,
+            rip: 25,
+            cs: 26,
+            rfl: 27,
+            rsp: 28,
+            ss: 29,
+        },
+        nitems: 0,
+        items_len: 0,
+        items: vec![],
+    };
+
+    let mut out = Cursor::new(Vec::new());
+    todo.write_le(&mut out).unwrap();
+
+    out.into_inner()
 }
 
 //
