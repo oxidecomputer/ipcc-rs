@@ -67,6 +67,18 @@ struct Args {
     #[clap(long)]
     ftdi_tweak: bool,
 
+    // The default suits real hardware. sp-emu is far slower per request: a
+    // local IPCC call takes about 400ms, and RoT-backed calls take seconds.
+    /// Serial read timeout in milliseconds. Raise it (5000 is enough) when
+    /// talking to sp-emu, or requests will appear to time out.
+    #[clap(
+        long,
+        env,
+        default_value_t = 200,
+        value_parser = clap::value_parser!(u64).range(1..)
+    )]
+    read_timeout_ms: u64,
+
     #[command(subcommand)]
     command: Command,
 }
@@ -152,7 +164,8 @@ fn main() -> Result<()> {
     #[cfg(not(feature = "ftdi"))]
     assert!(!args.ftdi_tweak);
 
-    let mut worker = Worker::new(&args.port, log.clone())?;
+    let mut worker =
+        Worker::new(&args.port, args.read_timeout_ms, log.clone())?;
     match args.command {
         Command::BadApob => {
             let got = worker.send_recv(
@@ -259,13 +272,17 @@ struct Worker {
 }
 
 impl Worker {
-    fn new(port_path: &Path, log: Logger) -> Result<Self> {
+    fn new(
+        port_path: &Path,
+        read_timeout_ms: u64,
+        log: Logger,
+    ) -> Result<Self> {
         let Some(port_name) = port_path.to_str() else {
             bail!("could not parse port name from {:?}", port_path);
         };
         info!(log, "connecting to serial port at `{port_name}`");
         let port = serialport::new(port_name, 3_000_000)
-            .timeout(Duration::from_millis(200))
+            .timeout(Duration::from_millis(read_timeout_ms))
             .data_bits(DataBits::Eight)
             .flow_control(FlowControl::None)
             .parity(Parity::None)
